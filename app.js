@@ -32,6 +32,8 @@ db.connect((err) => {
 app.use(bodyParser.json());
 
 
+
+
 app.post('/register', async (req, res) => {
     const saltRounds = 10;
     const { nombre, apellido, gmail, contraseña, fecha_nacimiento, id_clase } = req.body;
