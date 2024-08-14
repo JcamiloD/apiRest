@@ -1,14 +1,14 @@
 const db = require('../database/db');
 const bcrypt = require('bcrypt');
 
-// Crear estudiante
-exports.agregarUsuario = async (req, res) => {
+// Crear clase
+exports.agregarClase = async (req, res) => {
     const { nombre, apellido, fecha_nacimiento, gmail, id_clase, id_rol, estado, contraseña } = req.body;
 
     try {
         const hashedPassword = await bcrypt.hash(contraseña, 10);
 
-        const query = 'INSERT INTO usuarios (nombre, apellido, fecha_nacimiento, gmail, id_clase, id_rol, estado, contraseña) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+        const query = 'INSERT INTO clases (nombre, apellido, fecha_nacimiento, gmail, id_clase, id_rol, estado, contraseña) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
         db.query(query, [nombre, apellido, fecha_nacimiento, gmail, id_clase, id_rol, estado, hashedPassword], (err, results) => {
             if (err) {
                 console.error('Error al crear usuario:', err);
@@ -36,32 +36,47 @@ exports.agregarUsuario = async (req, res) => {
 exports.traer = async (req, res) => {
     const query = `
         SELECT 
-            u.id_usuario,
-            u.nombre,
-            u.apellido,
-            DATE_FORMAT(u.fecha_nacimiento, '%Y-%m-%d') AS fecha_nacimiento,
-            u.gmail,
-            u.id_clase,
-            u.contraseña,
-            u.id_rol,
-            u.estado,
-            r.nombre_rol,
-            c.nombre AS nombre_clase
+            c.id_clase,
+            c.nombre,
+            c.descripcion,
+            c.tipo_clase,
+            u.nombre AS nombre_instructor,
+            h.dias AS dias_clase,
+            h.hora_inicio AS inicio_clase,
+            h.hora_final AS final_clase
         FROM 
-            usuarios u
+            clases c
         LEFT JOIN 
-            rol r ON u.id_rol = r.id_rol
+            usuarios u ON c.id_instructor = u.id_usuario
         LEFT JOIN 
-            clases c ON u.id_clase = c.id_clase
+            horarios h ON c.id_horario = h.id_horario
     `;
     
     db.query(query, (err, results) => {
         if (err) {
-            return res.status(500).json({ error: 'Error al obtener usuarios', details: err.message });
+            return res.status(500).json({ error: 'Error al obtener clases', details: err.message });
         }
         res.status(200).json(results);
     });
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Controlador para obtener los datos de un usuario específico
 exports.obtenerUsuario = async (req, res) => {
