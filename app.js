@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const auth = require('./routes/auth.routes') 
 const usuario =require('./routes/crud_estudiantes.routes')
+const clase =require('./routes/crud_clases.routes')
 
 require('dotenv').config();
 
@@ -15,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 
-app.use('/api', auth, usuario)   
+app.use('/api', auth, usuario, clase)   
 
 app.use((req, res, next) => {
     console.log(`Solicitud ${req.method} recibida en ${req.url}`);
