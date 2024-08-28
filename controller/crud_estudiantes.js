@@ -46,7 +46,7 @@ exports.traer = async (req, res) => {
             u.id_rol,
             u.estado,
             r.nombre_rol,
-            c.nombre AS nombre_clase
+            c.nombre_clase AS nombre_clase
         FROM 
             usuarios u
         LEFT JOIN 
