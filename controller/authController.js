@@ -12,7 +12,6 @@ const crypto = require('crypto');
 exports.register = async (req, res) => {
     const saltRounds = 10;
     const { nombre, apellido, gmail, contraseña, fecha_nacimiento, id_clase } = req.body;
-
     try {
         const checkQuery = 'SELECT * FROM usuarios WHERE gmail = ?';
         db.query(checkQuery, [gmail], async (err, results) => {
