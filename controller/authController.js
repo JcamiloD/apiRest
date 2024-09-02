@@ -54,6 +54,7 @@ exports.login = async (req, res) => {
             return res.status(400).json({ message: 'Ingresa Datos en los campos' });
         }
 
+        // Verificar si el usuario existe y validar la contraseña
         db.query('SELECT * FROM usuarios WHERE gmail = ?', [gmail], async (error, results) => {
             if (error) {
                 console.log(error);
@@ -65,7 +66,7 @@ exports.login = async (req, res) => {
             }
 
             const user = results[0];
-            
+
             // Verificar el estado del usuario
             if (user.estado === 'deshabilitado') {
                 return res.status(403).json({ message: 'Tu cuenta está deshabilitada' });
@@ -74,23 +75,27 @@ exports.login = async (req, res) => {
                 return res.status(403).json({ message: 'Tu cuenta está en espera' });
             }
 
-            // Obtener el rol desde la tabla correspondiente
-            db.query('SELECT nombre_rol FROM rol WHERE id_rol = ?', [user.id_rol], (error, roleResults) => {
+            // Obtener el rol y los permisos asociados
+            db.query('SELECT rol.nombre_rol, permisos.nombre_permiso FROM rol INNER JOIN permisos_rol ON rol.id_rol = permisos_rol.id_rol INNER JOIN permisos ON permisos_rol.id_permiso = permisos.id_permiso WHERE rol.id_rol = ?', [user.id_rol], (error, results) => {
                 if (error) {
                     console.log(error);
                     return res.status(500).json({ message: 'Error en el servidor' });
                 }
 
-                if (roleResults.length === 0) {
-                    return res.status(500).json({ message: 'Rol no encontrado' });
+                if (results.length === 0) {
+                    return res.status(500).json({ message: 'Rol no encontrado o no tiene permisos asignados' });
                 }
 
-                const rol = roleResults[0].nombre_rol;
+                // Extraer el rol y los permisos
+                const rol = results[0].nombre_rol;
+                const permisos = results.map(result => result.nombre_permiso);
 
-                const token = jwt.sign({ id: user.id_usuario, rol }, process.env.JWT_SECRET, {
+                // Crear el token con rol y permisos
+                const token = jwt.sign({ id: user.id_usuario, rol, permisos }, process.env.JWT_SECRET, {
                     expiresIn: process.env.JWT_EXPIRES
                 });
 
+                // Guardar el token en la cookie
                 res.cookie('jwt', token, {
                     expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000),
                     httpOnly: true
@@ -104,6 +109,7 @@ exports.login = async (req, res) => {
         return res.status(500).json({ message: 'Error en el servidor' });
     }
 };
+
 
 
 
