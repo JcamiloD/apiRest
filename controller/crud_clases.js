@@ -37,7 +37,7 @@ exports.traer = async (req, res) => {
     const query = `
         SELECT 
             c.id_clase,
-            c.nombre,
+            c.nombre_clase,
             c.descripcion,
             c.tipo_clase,
             u.nombre AS nombre_instructor,
