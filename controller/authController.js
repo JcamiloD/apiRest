@@ -114,12 +114,13 @@ exports.login = async (req, res) => {
 
 
 
-exports.get_role = (req, res) => {
+exports.get_permissions = (req, res) => {
     const { id } = req.body;
     db.query(`
-        SELECT r.nombre_rol
-        FROM rol r
-        INNER JOIN usuarios u ON r.id_rol = u.id_rol
+        SELECT p.nombre_permiso
+        FROM permisos p
+        INNER JOIN permisos_rol rp ON p.id_permiso = rp.id_permiso
+        INNER JOIN usuarios u ON rp.id_rol = u.id_rol
         WHERE u.id_usuario = ?
     `, [id], (error, results) => {
         if (error) {
@@ -128,10 +129,12 @@ exports.get_role = (req, res) => {
         }
 
         if (results.length === 0) {
-            return res.status(404).json({ message: 'Rol no encontrado' });
+            return res.status(404).json({ message: 'Permisos no encontrados' });
         }
 
-        res.json({ rol: results[0].nombre_rol });
+        // Convertir los resultados en un array de permisos
+        const permisos = results.map(row => row.nombre_permiso);
+        res.json({ permisos });
     });
 };
 
