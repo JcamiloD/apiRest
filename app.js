@@ -4,6 +4,8 @@ const auth = require('./routes/auth.routes')
 const usuario =require('./routes/crud_estudiantes.routes')
 const clase =require('./routes/crud_clases.routes')
 const roles =require('./routes/roles.routes')
+const catalogoRoutes = require('./routes/catalogo.routes');
+const path = require('path');
 
 require('dotenv').config();
 
@@ -16,8 +18,10 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(bodyParser.json());
 
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-app.use('/api', auth, usuario, clase, roles)   
+
+app.use('/api', auth, usuario, clase, roles, catalogoRoutes)   
 
 app.use((req, res, next) => {
     console.log(`Solicitud ${req.method} recibida en ${req.url}`);
