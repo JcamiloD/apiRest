@@ -44,8 +44,6 @@ exports.register = async (req, res) => {
     }
 };
 
-
-
 exports.login = async (req, res) => {
     try {
         const { gmail, pass } = req.body;
@@ -75,23 +73,31 @@ exports.login = async (req, res) => {
                 return res.status(403).json({ message: 'Tu cuenta está en espera' });
             }
 
-            // Obtener el rol y los permisos asociados
-            db.query('SELECT rol.nombre_rol, permisos.nombre_permiso FROM rol INNER JOIN permisos_rol ON rol.id_rol = permisos_rol.id_rol INNER JOIN permisos ON permisos_rol.id_permiso = permisos.id_permiso WHERE rol.id_rol = ?', [user.id_rol], (error, results) => {
+            // Obtener el rol, permisos y la clase asociada
+            db.query(`
+                SELECT rol.nombre_rol, permisos.nombre_permiso, clases.nombre_clase 
+                FROM rol 
+                INNER JOIN permisos_rol ON rol.id_rol = permisos_rol.id_rol 
+                INNER JOIN permisos ON permisos_rol.id_permiso = permisos.id_permiso
+                LEFT JOIN clases ON clases.id_clase = ?
+                WHERE rol.id_rol = ?
+            `, [user.id_clase, user.id_rol], (error, results) => {
                 if (error) {
                     console.log(error);
                     return res.status(500).json({ message: 'Error en el servidor' });
                 }
 
                 if (results.length === 0) {
-                    return res.status(500).json({ message: 'Rol no encontrado o no tiene permisos asignados' });
+                    return res.status(500).json({ message: 'Rol no encontrado, clase no encontrada o no tiene permisos asignados' });
                 }
 
-                // Extraer el rol y los permisos
+                // Extraer el rol, los permisos y la clase
                 const rol = results[0].nombre_rol;
                 const permisos = results.map(result => result.nombre_permiso);
+                const clase = results[0].nombre_clase;
 
-                // Crear el token con rol y permisos
-                const token = jwt.sign({ id: user.id_usuario, rol, permisos }, process.env.JWT_SECRET, {
+                // Crear el token con rol, permisos y clase
+                const token = jwt.sign({ id: user.id_usuario, rol, permisos, clase }, process.env.JWT_SECRET, {
                     expiresIn: process.env.JWT_EXPIRES
                 });
 
@@ -109,8 +115,6 @@ exports.login = async (req, res) => {
         return res.status(500).json({ message: 'Error en el servidor' });
     }
 };
-
-
 
 
 
