@@ -32,7 +32,6 @@ exports.agregarUsuario = async (req, res) => {
 };
 
 
-
 exports.traer = async (req, res) => {
     const query = `
         SELECT 
@@ -53,6 +52,8 @@ exports.traer = async (req, res) => {
             rol r ON u.id_rol = r.id_rol
         LEFT JOIN 
             clases c ON u.id_clase = c.id_clase
+        WHERE 
+            u.estado = 'habilitado';
     `;
     
     db.query(query, (err, results) => {
@@ -62,6 +63,7 @@ exports.traer = async (req, res) => {
         res.status(200).json(results);
     });
 };
+
 
 // Controlador para obtener los datos de un usuario específico
 exports.obtenerUsuario = async (req, res) => {
@@ -220,5 +222,41 @@ exports.eliminar = async (req, res) => {
             return res.status(404).json({ error: 'Estudiante no encontrado' });
         }
         res.status(204).send(); // No Content
+    });
+};
+
+
+
+
+
+exports.traerEspera = async (req, res) => {
+    const query = `
+        SELECT 
+            u.id_usuario,
+            u.nombre,
+            u.apellido,
+            DATE_FORMAT(u.fecha_nacimiento, '%Y-%m-%d') AS fecha_nacimiento,
+            u.gmail,
+            u.id_clase,
+            u.contraseña,
+            u.id_rol,
+            u.estado,
+            r.nombre_rol,
+            c.nombre_clase AS nombre_clase
+        FROM 
+            usuarios u
+        LEFT JOIN 
+            rol r ON u.id_rol = r.id_rol
+        LEFT JOIN 
+            clases c ON u.id_clase = c.id_clase
+        WHERE 
+            u.estado = 'espera';
+    `;
+    
+    db.query(query, (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: 'Error al obtener usuarios', details: err.message });
+        }
+        res.status(200).json(results);
     });
 };

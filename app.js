@@ -8,11 +8,6 @@ const roles = require('./routes/roles.routes');
 const eventos = require('./routes/eventos.routes'); // Asegúrate de que el archivo es correcto
 
 
-const auth = require('./routes/auth.routes') 
-const usuario =require('./routes/crud_estudiantes.routes')
-const clase =require('./routes/crud_clases.routes')
-const roles =require('./routes/roles.routes')
-
 const asistencias =require('./routes/asistencias.routes')
 
 const catalogoRoutes = require('./routes/catalogo.routes');
@@ -46,9 +41,6 @@ app.use((req, res, next) => {
     console.log(`Solicitud ${req.method} recibida en ${req.url}`);
     next();
 });
-
-const cors = require('cors');
-app.use(cors());
 
 
 const PORT = process.env.PORT || 4000;

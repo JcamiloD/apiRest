@@ -71,7 +71,10 @@ exports.login = async (req, res) => {
             }
             if (user.estado === 'espera') {
                 return res.status(403).json({ message: 'Tu cuenta está en espera' });
+            }if (user.estado != 'habilitado' & user.estado !='deshabilitado' & user.estado != 'espera' ) {
+                return res.status(403).json({ message: 'Se desconoce tu estado0000000' });
             }
+            
 
             // Obtener el rol, permisos y la clase asociada
             db.query(`
@@ -93,11 +96,11 @@ exports.login = async (req, res) => {
 
                 // Extraer el rol, los permisos y la clase
                 const rol = results[0].nombre_rol;
-                const permisos = results.map(result => result.nombre_permiso);
+
                 const clase = results[0].nombre_clase;
 
                 // Crear el token con rol, permisos y clase
-                const token = jwt.sign({ id: user.id_usuario, rol, permisos, clase }, process.env.JWT_SECRET, {
+                const token = jwt.sign({ id: user.id_usuario, rol, clase }, process.env.JWT_SECRET, {
                     expiresIn: process.env.JWT_EXPIRES
                 });
 
