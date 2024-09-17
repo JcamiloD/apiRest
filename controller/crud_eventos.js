@@ -1,6 +1,6 @@
-const mysql2 = require('mysql2/promise'); 
+const mysql2 = require('mysql2/promise');
 
-const pool = mysql2.createPool({  
+const pool = mysql2.createPool({
   host: 'localhost',
   user: 'root',
   password: '',
@@ -32,21 +32,21 @@ exports.obtenerEvento = async (req, res) => {
 };
 
 exports.agregarEvento = async (req, res) => {
-  const { nombre_evento, descripcion, tipo_evento, ubicacion, fecha_inicio, fecha_fin, color_evento } = req.body;
+  const { nombre_evento, descripcion, tipo_evento, ubicacion, fecha_inicio, fecha_fin, color_evento, id_clase, duracion } = req.body;
 
   // Verificar que las fechas estén en formato YYYY-MM-DD y agregar tiempo si es necesario
   const fecha_hora_inicio = `${fecha_inicio} 00:00:00`;
   const fecha_hora_final = `${fecha_fin} 23:59:59`;
 
   try {
-    // Insertar el evento en la tabla 'eventos'
+    // Insertar el evento en la tabla 'eventos' con el campo duracion
     const [result] = await pool.query(`
-      INSERT INTO eventos (nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final, color_evento) 
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `, [nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final, color_evento]);
+      INSERT INTO eventos (nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final, color_evento, id_clase, duracion) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final, color_evento, id_clase, duracion]);
 
     const id_evento = result.insertId;
-    
+
     // Responder con el id del evento insertado
     res.json({ id_evento });
   } catch (error) {
@@ -55,10 +55,9 @@ exports.agregarEvento = async (req, res) => {
   }
 };
 
-
 exports.actualizarEvento = async (req, res) => {
   const id = req.params.id;
-  const { nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final, color_evento } = req.body;
+  const { nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final, color_evento, id_clase, duracion } = req.body;
 
   try {
     const updates = [];
@@ -92,6 +91,14 @@ exports.actualizarEvento = async (req, res) => {
     if (color_evento) {
       updates.push('color_evento = ?');
       values.push(color_evento);
+    }
+    if (id_clase) {
+      updates.push('id_clase = ?');
+      values.push(id_clase);
+    }
+    if (duracion) {
+      updates.push('duracion = ?');
+      values.push(duracion);
     }
 
     // Verificar si se proporcionaron campos para actualizar
