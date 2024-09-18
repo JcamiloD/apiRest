@@ -65,16 +65,18 @@ exports.agregarNovedad = async (req, res) => {
     }
 };
 
+
+
 // Actualizar una novedad
 exports.actualizarNovedad = async (req, res) => {
     const { id } = req.params;
-    const { titulo, descripcion, fecha, id_evento, id_clase } = req.body;
+    const { titulo, descripcion, fecha, evento, clase } = req.body;  
     try {
         const result = await pool.query(`
             UPDATE novedades 
             SET titulo = ?, descripcion = ?, fecha = ?, id_evento = ?, id_clase = ? 
             WHERE id_novedad = ?
-        `, [titulo, descripcion, fecha, id_evento, id_clase, id]);
+        `, [titulo, descripcion, fecha, evento, clase, id]);  // Usando evento y clase
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: 'Novedad no encontrada' });
         }

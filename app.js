@@ -12,6 +12,7 @@ const novedades = require('./routes/novedad.routes');
 const asistencias =require('./routes/asistencias.routes')
 
 const catalogoRoutes = require('./routes/catalogo.routes');
+
 const path = require('path')
 
 

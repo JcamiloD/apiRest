@@ -59,7 +59,6 @@ exports.createAsistencia = async (req, res) => {
     }
 };
 
-
 exports.getAsistenciasPorUsuario = async (req, res) => {
     const { id_usuario } = req.params;
 
@@ -78,10 +77,9 @@ exports.getAsistenciasPorUsuario = async (req, res) => {
             return res.status(200).json([]);
         }
         
-
-        // Consultar los detalles de los estudiantes para cada asistencia
+        // Consultar los detalles del estudiante especificado para cada asistencia
         const results = await Promise.all(asistencias.map(async asistencia => {
-            const [estudiantes] = await dbbb.query(`
+            const [estudiante] = await dbbb.query(`
                 SELECT au.id_asistencia, u.id_usuario, u.nombre AS nombre_usuario, 
                     CASE au.presente 
                         WHEN 1 THEN 'sí' 
@@ -89,12 +87,12 @@ exports.getAsistenciasPorUsuario = async (req, res) => {
                     END AS presente
                 FROM asistencia_usuarios au
                 JOIN usuarios u ON au.id_usuario = u.id_usuario
-                WHERE au.id_asistencia = ?
-            `, [asistencia.id_asistencia]);
+                WHERE au.id_asistencia = ? AND au.id_usuario = ?
+            `, [asistencia.id_asistencia, id_usuario]);
 
             return {
                 ...asistencia,
-                estudiantes
+                estudiante
             };
         }));
 
@@ -104,6 +102,7 @@ exports.getAsistenciasPorUsuario = async (req, res) => {
         res.status(500).json({ message: 'Error al obtener asistencias por usuario', error: error.message });
     }
 };
+
 
 
 exports.getAsistencias = async (req, res) => {
