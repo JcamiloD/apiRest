@@ -9,15 +9,31 @@ const pool = mysql2.createPool({
   connectionLimit: 10,
   queueLimit: 0
 });
-
 exports.traerEventos = async (req, res) => {
   try {
     const [rows] = await pool.query(`
-      SELECT * FROM eventos
+      SELECT e.*, c.nombre_clase
+      FROM eventos e
+      JOIN clases c ON e.id_clase = c.id_clase
     `);
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener eventos' });
+  }
+};
+
+exports.traerEventosPorNombreClase = async (req, res) => {
+  const { nombre_clase } = req.params; // Obtener el nombre_clase del parámetro de la ruta
+  try {
+    const [rows] = await pool.query(`
+      SELECT e.*, c.nombre_clase
+      FROM eventos e
+      JOIN clases c ON e.id_clase = c.id_clase
+      WHERE c.nombre_clase = ?
+    `, [nombre_clase]); // Filtrar por el nombre_clase proporcionado
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener eventos de la clase' });
   }
 };
 
