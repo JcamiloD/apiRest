@@ -9,15 +9,31 @@ const pool = mysql2.createPool({
   connectionLimit: 10,
   queueLimit: 0
 });
-
 exports.traerEventos = async (req, res) => {
   try {
     const [rows] = await pool.query(`
-      SELECT * FROM eventos
+      SELECT e.*, c.nombre_clase
+      FROM eventos e
+      JOIN clases c ON e.id_clase = c.id_clase
     `);
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener eventos' });
+  }
+};
+
+exports.traerEventosPorNombreClase = async (req, res) => {
+  const { nombre_clase } = req.params; // Obtener el nombre_clase del parámetro de la ruta
+  try {
+    const [rows] = await pool.query(`
+      SELECT e.*, c.nombre_clase
+      FROM eventos e
+      JOIN clases c ON e.id_clase = c.id_clase
+      WHERE c.nombre_clase = ?
+    `, [nombre_clase]); // Filtrar por el nombre_clase proporcionado
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener eventos de la clase' });
   }
 };
 
@@ -32,23 +48,29 @@ exports.obtenerEvento = async (req, res) => {
 };
 
 exports.agregarEvento = async (req, res) => {
-  const { nombre_evento, descripcion, tipo_evento, ubicacion, fecha_inicio, fecha_fin, color_evento, id_clase, duracion } = req.body;
+  const { 
+    nombre_evento, descripcion, tipo_evento, ubicacion, fecha_inicio, fecha_fin, 
+    color_evento, id_clase, duracion, notificar, descripcion_notificacion 
+  } = req.body;
 
-  // Verificar que las fechas estén en formato YYYY-MM-DD y agregar tiempo si es necesario
   const fecha_hora_inicio = `${fecha_inicio} 00:00:00`;
   const fecha_hora_final = `${fecha_fin} 23:59:59`;
 
   try {
-    // Insertar el evento en la tabla 'eventos' con el campo duracion
+
+    const descripcionNotif = notificar === "si" ? descripcion_notificacion : null;
+
     const [result] = await pool.query(`
-      INSERT INTO eventos (nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final, color_evento, id_clase, duracion) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final, color_evento, id_clase, duracion]);
+      INSERT INTO eventos 
+        (nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final, 
+        color_evento, id_clase, duracion, notificar, descripcion_notificacion) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final, 
+      color_evento, id_clase, duracion, notificar, descripcionNotif
+    ]);
 
-    const id_evento = result.insertId;
-
-    // Responder con el id del evento insertado
-    res.json({ id_evento });
+    res.json({ id_evento: result.insertId });
   } catch (error) {
     console.error('Error al agregar el evento:', error);
     res.status(500).json({ error: 'Error al agregar el evento' });
@@ -56,14 +78,18 @@ exports.agregarEvento = async (req, res) => {
 };
 
 exports.actualizarEvento = async (req, res) => {
-  const id = req.params.id;
-  const { nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final, color_evento, id_clase, duracion } = req.body;
+  const { id } = req.params;
+  const { 
+    nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final, 
+    color_evento, id_clase, duracion, notificar, descripcion_notificacion 
+  } = req.body;
 
+  console.log(req.body); // Para depuración
   try {
     const updates = [];
     const values = [];
 
-    // Verificar si cada campo está presente y agregar a la consulta
+    // Verificar si cada campo está presente y agregarlo a la consulta
     if (nombre_evento) {
       updates.push('nombre_evento = ?');
       values.push(nombre_evento);
@@ -101,9 +127,40 @@ exports.actualizarEvento = async (req, res) => {
       values.push(duracion);
     }
 
+    // Manejar el campo de notificación
+    if (notificar !== undefined) {
+      updates.push('notificar = ?');
+      values.push(notificar);
+
+      // Manejar descripcion_notificacion
+      if (notificar === "si") { // Cambia "si" por el valor correcto que esperas
+        if (descripcion_notificacion) {
+          updates.push('descripcion_notificacion = ?');
+          values.push(descripcion_notificacion);
+        } else {
+          return res.status(400).json({ success: false, message: 'Se requiere descripcion_notificacion cuando se selecciona notificar.' });
+        }
+      } else {
+        updates.push('descripcion_notificacion = NULL');
+      }
+    }
+
     // Verificar si se proporcionaron campos para actualizar
     if (updates.length === 0) {
       return res.status(400).json({ success: false, message: 'No se proporcionaron datos para actualizar' });
+    }
+
+    // Validaciones de fecha
+    if (fecha_hora_inicio && fecha_hora_final) {
+      const inicio = new Date(fecha_hora_inicio);
+      const final = new Date(fecha_hora_final);
+      
+      if (inicio < new Date()) {
+        return res.status(400).json({ success: false, message: 'La fecha de inicio no puede ser anterior a la fecha actual.' });
+      }
+      if (final < inicio) {
+        return res.status(400).json({ success: false, message: 'La fecha de finalización no puede ser anterior a la fecha de inicio.' });
+      }
     }
 
     values.push(id); // Agregar el ID al final de los valores
@@ -118,9 +175,8 @@ exports.actualizarEvento = async (req, res) => {
     }
 
     return res.json({ success: true, message: 'Evento actualizado correctamente' });
-
   } catch (error) {
-    console.error('Error al actualizar el evento:', error); // Agregar log para errores
+    console.error('Error al actualizar el evento:', error);
     return res.status(500).json({ success: false, message: 'Error al actualizar el evento' });
   }
 };
