@@ -29,6 +29,86 @@ exports.traer = async (req, res) => {
     });
 };
 
+// Agregar rol
+exports.agregarRol = async (req, res) => {
+    const { nombre_rol } = req.body;
+
+    // Verificar que el nombre_rol fue proporcionado
+    if (!nombre_rol) {
+        return res.status(400).json({ error: 'El nombre del rol es requerido' });
+    }
+
+    try {
+        // Insertar el nuevo rol en la tabla 'rol'
+        const insertRolQuery = 'INSERT INTO rol (nombre_rol) VALUES (?)';
+        db.query(insertRolQuery, [nombre_rol], (err, result) => {
+            if (err) {
+                return res.status(500).json({ error: 'Error al agregar el rol' });
+            }
+            // Devolver solo el ID del rol agregado
+            const rolId = result.insertId;
+            res.status(201).json({ id_rol: rolId }); // Solo devolver el ID
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Error en el servidor' });
+    }
+};
+
+// Editar rol
+exports.editarRol = async (req, res) => {
+    const { id_rol } = req.params; // Obtener el ID del rol desde los parámetros
+    const { nombre_rol } = req.body; // Obtener el nuevo nombre del rol del cuerpo de la solicitud
+
+    // Verificar que el nombre del rol fue proporcionado
+    if (!nombre_rol) {
+        return res.status(400).json({ error: 'El nombre del rol es requerido' });
+    }
+
+    try {
+        // Actualizar el nombre del rol en la tabla 'rol'
+        const updateRolQuery = 'UPDATE rol SET nombre_rol = ? WHERE id_rol = ?';
+        db.query(updateRolQuery, [nombre_rol, id_rol], (err, result) => {
+            if (err) {
+                return res.status(500).json({ error: 'Error al actualizar el rol', details: err.message });
+            }
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: 'Rol no encontrado' });
+            }
+            res.status(200).json({ message: 'Rol actualizado exitosamente' });
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Error en el servidor', details: error.message });
+    }
+};
+
+
+
+// Eliminar rol
+exports.eliminarRol = async (req, res) => {
+    const { id_rol } = req.params; // Obtener el ID del rol desde los parámetros
+
+    // Verificar que el id_rol fue proporcionado
+    if (!id_rol) {
+        return res.status(400).json({ error: 'El ID del rol es requerido' });
+    }
+
+    try {
+        // Eliminar el rol de la tabla 'rol'
+        const deleteRolQuery = 'DELETE FROM rol WHERE id_rol = ?';
+        db.query(deleteRolQuery, [id_rol], (err, result) => {
+            if (err) {
+                return res.status(500).json({ error: 'Error al eliminar el rol', details: err.message });
+            }
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: 'Rol no encontrado' });
+            }
+            res.status(200).json({ message: 'Rol eliminado exitosamente' });
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Error en el servidor', details: error.message });
+    }
+};
+
 
 exports.obtenerPermisos = (req, res) => {
     try {
