@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 
 const auth = require('./routes/auth.routes');
+const perfil = require('./routes/perfil.routes');
 const usuario = require('./routes/crud_estudiantes.routes');
 const clase = require('./routes/crud_clases.routes');
 const roles = require('./routes/roles.routes');
@@ -31,7 +32,7 @@ const cors = require('cors');
 app.use(cors());
 
 
-app.use('/api', auth, usuario, clase, roles,catalogoRoutes,asistencias, eventos, novedades);
+app.use('/api', auth, perfil, usuario, clase, roles,catalogoRoutes,asistencias, eventos, novedades);
 
 
 
