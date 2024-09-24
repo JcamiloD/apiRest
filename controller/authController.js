@@ -46,6 +46,7 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
     try {
+        console.log("hola")
         const { gmail, pass } = req.body;
 
         if (!gmail || !pass) {
@@ -145,6 +146,31 @@ exports.get_permissions = (req, res) => {
     });
 };
 
+exports.checkEmail = async (req, res) => {
+    const { email } = req.params;
+    console.log('Email recibido:', email);
+  
+    try {
+      // Realiza la consulta para verificar si el correo existe
+      db.query('SELECT * FROM usuarios WHERE gmail = ?', [email], (error, results) => {
+        if (error) {
+          console.error('Error en la consulta a la base de datos:', error);
+          return res.status(500).json({ message: 'Error del servidor.' });
+        }
+  
+  
+        if (results.length > 0) {
+          res.status(200).json({ message: 'El correo existe.' });
+        } else {
+          res.status(404).json({ message: 'Correo no encontrado.' });
+        }
+      });
+    } catch (error) {
+      console.error('Error en la consulta:', error);
+      res.status(500).json({ message: 'Error del servidor.' });
+    }
+  };
+  
 
 exports.enviarCodigo = async (req, res) => {
     try {
@@ -207,6 +233,7 @@ exports.enviarCodigo = async (req, res) => {
 };
 
 exports.restablecerContraseña = async (req, res, next) => {
+    console.log(req.body)
     const saltRounds = 10;
     try {
         const { codigo, nuevaContraseña } = req.body;
@@ -244,6 +271,7 @@ exports.restablecerContraseña = async (req, res, next) => {
                     res.status(200).json({ message: 'Contraseña restablecida con éxito.' });
                 });
             } else {
+                console.log("codigo incorrecto")
                 res.status(400).json({ message: 'Código incorrecto.' });
             }
         });

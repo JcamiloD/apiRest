@@ -1,6 +1,4 @@
 // catalogoController.js
-
-const FormData = require('form-data');
 const db = require('../database/db');
 const jwt = require('jsonwebtoken');
 
@@ -180,7 +178,6 @@ const getCatalogo = (req, res) => {
             FROM clases
             WHERE nombre_clase = ?
         `;
-
         db.query(queryClase, [clase], (error, results) => {
             if (error) {
                 console.error('Error al obtener el id_clase:', error);

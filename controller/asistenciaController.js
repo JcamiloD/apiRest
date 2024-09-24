@@ -13,6 +13,7 @@ const dbbb = mysql.createPool({
 
 exports.createAsistencia = async (req, res) => {
     try {
+        console.log(req.body)
         const { id_clase, fecha_asistencia, estudiantes } = req.body;
 
         // Validar datos de entrada
@@ -193,9 +194,12 @@ exports.updateAsistencia = async (req, res) => {
     }
 };
 
+
 exports.actualizarasis = async (req, res) => {
+    
     try {
         const { id_asistencia } = req.params;
+        console.log(id_asistencia)
         const { fecha_asistencia, id_clase, estudiantes } = req.body;
 
         // Validar datos de entrada

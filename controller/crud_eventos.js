@@ -48,6 +48,7 @@ exports.obtenerEvento = async (req, res) => {
 };
 
 exports.agregarEvento = async (req, res) => {
+  console.log("Hola")
   const { 
     nombre_evento, descripcion, tipo_evento, ubicacion, fecha_inicio, fecha_fin, 
     color_evento, id_clase, duracion, notificar, descripcion_notificacion 
@@ -181,8 +182,10 @@ exports.actualizarEvento = async (req, res) => {
   }
 };
 
+
 exports.eliminarEvento = async (req, res) => {
   const id = req.params.id;
+  console.log(id)
   try {
     await pool.query('DELETE FROM eventos WHERE id_evento = ?', [id]);
     res.json({ message: 'Evento eliminado' });
