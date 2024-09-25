@@ -1,38 +1,7 @@
 const db = require('../database/db');
 const bcrypt = require('bcrypt');
 
-// Crear clase
-exports.agregarClase = async (req, res) => {
-    const { nombre, apellido, fecha_nacimiento, gmail, id_clase, id_rol, estado, contraseña } = req.body;
-
-    try {
-        const hashedPassword = await bcrypt.hash(contraseña, 10);
-
-        const query = 'INSERT INTO clases (nombre, apellido, fecha_nacimiento, gmail, id_clase, id_rol, estado, contraseña) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
-        db.query(query, [nombre, apellido, fecha_nacimiento, gmail, id_clase, id_rol, estado, hashedPassword], (err, results) => {
-            if (err) {
-                console.error('Error al crear usuario:', err);
-                return res.status(400).json({ error: 'Error al crear usuario', details: err.message });
-            }
-            res.status(201).json({
-                id_usuario: results.insertId,
-                nombre,
-                apellido,
-                fecha_nacimiento,
-                gmail,
-                id_clase,
-                id_rol,
-                estado
-            });
-        });
-    } catch (error) {
-        console.error('Error al cifrar la contraseña:', error);
-        res.status(500).json({ error: 'Error al cifrar la contraseña', details: error.message });
-    }
-};
-
-
-
+// Traer todas las clases
 exports.traer = async (req, res) => {
     const query = `
         SELECT 
@@ -40,18 +9,16 @@ exports.traer = async (req, res) => {
             c.nombre_clase,
             c.descripcion,
             c.tipo_clase,
-            u.nombre AS nombre_instructor,
+            c.id_horario,  -- Agregado para traer el id_horario
             h.dias AS dias_clase,
             h.hora_inicio AS inicio_clase,
             h.hora_final AS final_clase
         FROM 
             clases c
         LEFT JOIN 
-            usuarios u ON c.id_instructor = u.id_usuario
-        LEFT JOIN 
             horarios h ON c.id_horario = h.id_horario
     `;
-    
+
     db.query(query, (err, results) => {
         if (err) {
             return res.status(500).json({ error: 'Error al obtener clases', details: err.message });
@@ -61,179 +28,92 @@ exports.traer = async (req, res) => {
 };
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Controlador para obtener los datos de un usuario específico
-exports.obtenerUsuario = async (req, res) => {
-    const usuarioId = req.params.id;
-
-    try {
-        // Suponiendo que usas una función de base de datos para hacer la consulta
-        const query = 'SELECT * FROM usuarios WHERE id_usuario = ?';
-        
-        // Consulta a la base de datos
-        db.query(query, [usuarioId], (err, results) => {
-            if (err) {
-                console.error('Error al consultar el usuario:', err);
-                return res.status(500).json({ error: 'Error al consultar el usuario', details: err.message });
-            }
-
-            if (results.length === 0) {
-                return res.status(404).json({ error: 'Usuario no encontrado' });
-            }
-
-            // Enviar los datos del usuario como respuesta
-            res.status(200).json(results[0]);
-        });
-    } catch (error) {
-        console.error('Error al obtener los datos del usuario:', error);
-        res.status(500).json({ error: 'Error interno del servidor', details: error.message });
-    }
-};
-
-exports.editarUsuario = async (req, res, next) => {
-    try {
-        const usuarioId = req.params.id;
-        const usuarioActualizado = {
-            nombre: req.body.nombre,
-            apellido: req.body.apellido,
-            fecha_nacimiento: req.body.fecha_nacimiento,
-            gmail: req.body.gmail,
-            id_clase: req.body.id_clase,
-            id_rol: req.body.id_rol,
-            estado: req.body.estado,
-            contraseña: req.body.contraseña // Si se desea cambiar la contraseña
-        };
-
-        const response = await fetch(`http://localhost:4000/api/actualizar/${usuarioId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(usuarioActualizado)
-        });
-
-        if (!response.ok) {
-            throw new Error(`Network response was not ok. Status: ${response.status}, Response: ${await response.text()}`);
-        }
-
-        const data = await response.json();
-        console.log('Datos actualizados del servidor:', data);
-
-        res.locals.data = data;
-        next();
-    } catch (error) {
-        console.error('Error al editar usuario:', error);
-        res.status(500).send('Error interno del servidor');
-    }
-};
-
-
-
-
-
-// Leer un estudiante específico
-exports.traer_id = async (req, res) => {
+// Obtener una clase por ID
+exports.obtenerClase = async (req, res) => {
     const { id } = req.params;
-    const query = 'SELECT * FROM estudiantes WHERE id_usuario = ?';
+    const query = `
+        SELECT 
+            c.id_clase,
+            c.nombre_clase,
+            c.descripcion,
+            c.tipo_clase,
+            h.dias AS dias_clase,
+            h.hora_inicio AS inicio_clase,
+            h.hora_final AS final_clase
+        FROM 
+            clases c
+        LEFT JOIN 
+            horarios h ON c.id_horario = h.id_horario
+        WHERE c.id_clase = ?
+    `;
+
     db.query(query, [id], (err, results) => {
-        if (err || results.length === 0) {
-            return res.status(404).json({ error: 'Estudiante no encontrado' });
+        if (err) {
+            return res.status(500).json({ error: 'Error al obtener la clase', details: err.message });
+        }
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'Clase no encontrada' });
         }
         res.status(200).json(results[0]);
     });
 };
 
-
-
-exports.actualizarUsuario = async (req, res) => {
-    const { id } = req.params;
-    const { nombre, apellido, fecha_nacimiento, gmail, id_clase, contraseña, id_rol, estado } = req.body;
-
-    // Validar que id sea un número positivo
-    if (!Number.isInteger(Number(id)) || Number(id) <= 0) {
-        return res.status(400).json({ error: 'ID inválido' });
-    }
-
-    // Encriptar la contraseña si se proporciona
-    let hashedPassword = null;
-    if (contraseña) {
-        try {
-            hashedPassword = await bcrypt.hash(contraseña, 10);
-        } catch (err) {
-            console.error('Error al encriptar la contraseña:', err);
-            return res.status(500).json({ error: 'Error interno del servidor al encriptar la contraseña' });
-        }
-    }
-
-    // Consulta SQL para actualizar los campos del usuario
+// Agregar una nueva clase
+exports.agregarClase = async (req, res) => {
+    const { nombre_clase, descripcion, tipo_clase, id_horario } = req.body;
     const query = `
-        UPDATE usuarios 
-        SET nombre = ?, apellido = ?, fecha_nacimiento = ?, gmail = ?, id_clase = ?, 
-            ${contraseña ? 'contraseña = ?,' : ''}
-            id_rol = ?, estado = ?
-        WHERE id_usuario = ?
+        INSERT INTO clases (nombre_clase, descripcion, tipo_clase, id_horario)
+        VALUES (?, ?, ?, ?)
     `;
 
-    // Crear un array con los valores para la consulta SQL
-    const values = [nombre, apellido, fecha_nacimiento, gmail, id_clase];
-    if (hashedPassword) values.push(hashedPassword); // Añadir la contraseña encriptada si está presente
-    values.push(id_rol, estado, id);
-
-    // Ejecutar la consulta
-    db.query(query, values, (err, results) => {
+    db.query(query, [nombre_clase, descripcion, tipo_clase, id_horario], (err, result) => {
         if (err) {
-            console.error('Error al ejecutar la consulta:', err); // Agregar un log para depuración
-            return res.status(400).json({ error: 'Error al actualizar estudiante' });
+            return res.status(500).json({ error: 'Error al agregar la clase', details: err.message });
         }
-        if (results.affectedRows === 0) {
-            return res.status(404).json({ error: 'Estudiante no encontrado' });
-        }
-        res.status(200).json({
-            id_usuario: id,
-            nombre,
-            apellido,
-            fecha_nacimiento,
-            gmail,
-            id_clase,
-            id_rol,
-            estado
-        });
+        res.status(201).json({ message: 'Clase agregada exitosamente', id_clase: result.insertId });
     });
 };
 
+// Actualizar una clase
+exports.actualizarClase = async (req, res) => {
+    const { id } = req.params; // Obtener el ID de los parámetros de la solicitud
+    const { nombre_clase, descripcion, tipo_clase, horario_clase, inicio_clase, final_clase } = req.body;
 
-exports.eliminar = async (req, res) => {
+    const query = `
+        UPDATE clases 
+        SET 
+            nombre_clase = ?, 
+            descripcion = ?, 
+            tipo_clase = ?, 
+            id_horario = ?  -- Asegúrate de que este campo corresponde correctamente
+        WHERE id_clase = ?
+    `;
+
+    // Asegúrate de que `horario_clase` sea un ID válido de la tabla `horarios`
+    db.query(query, [nombre_clase, descripcion, tipo_clase, horario_clase, id], (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: 'Error al actualizar la clase', details: err.message });
+        }
+        res.status(200).json({ success: true, message: 'Clase actualizada exitosamente' });
+    });
+};
+
+// Eliminar una clase
+exports.eliminarClase = async (req, res) => {
     const { id } = req.params;
+    const query = 'DELETE FROM clases WHERE id_clase = ?';
 
-    // Validar que el ID sea un número positivo
-    if (!Number.isInteger(Number(id)) || Number(id) <= 0) {
-        return res.status(400).json({ error: 'ID inválido' });
-    }
-
-    const query = 'DELETE FROM usuarios WHERE id_usuario = ?';
-    db.query(query, [id], (err, results) => {
+    db.query(query, [id], (err, result) => {
         if (err) {
-            return res.status(500).json({ error: 'Error al eliminar estudiante' });
+            // Manejo de error de base de datos
+            return res.status(500).json({ error: 'Error al eliminar la clase', details: err.message });
         }
-        if (results.affectedRows === 0) {
-            return res.status(404).json({ error: 'Estudiante no encontrado' });
+        if (result.affectedRows === 0) {
+            // Si no se afectaron filas, significa que la clase no fue encontrada
+            return res.status(404).json({ error: 'Clase no encontrada' });
         }
-        res.status(204).send(); // No Content
+        // Respuesta exitosa
+        res.status(200).json({ message: 'Clase eliminada exitosamente' });
     });
 };
+
