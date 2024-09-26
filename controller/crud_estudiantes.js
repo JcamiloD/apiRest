@@ -93,46 +93,6 @@ exports.obtenerUsuario = async (req, res) => {
     }
 };
 
-exports.editarUsuario = async (req, res, next) => {
-    try {
-        const usuarioId = req.params.id;
-        const usuarioActualizado = {
-            nombre: req.body.nombre,
-            apellido: req.body.apellido,
-            fecha_nacimiento: req.body.fecha_nacimiento,
-            gmail: req.body.gmail,
-            id_clase: req.body.id_clase,
-            id_rol: req.body.id_rol,
-            estado: req.body.estado,
-            contraseña: req.body.contraseña // Si se desea cambiar la contraseña
-        };
-
-        const response = await fetch(`http://localhost:4000/api/actualizar/${usuarioId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(usuarioActualizado)
-        });
-
-        if (!response.ok) {
-            throw new Error(`Network response was not ok. Status: ${response.status}, Response: ${await response.text()}`);
-        }
-
-        const data = await response.json();
-        console.log('Datos actualizados del servidor:', data);
-
-        res.locals.data = data;
-        next();
-    } catch (error) {
-        console.error('Error al editar usuario:', error);
-        res.status(500).send('Error interno del servidor');
-    }
-};
-
-
-
-
 
 // Leer un estudiante específico
 exports.traer_id = async (req, res) => {
@@ -146,50 +106,76 @@ exports.traer_id = async (req, res) => {
     });
 };
 
+// Editar usuario
+exports.editarUsuario = async (req, res) => {
+    const { id } = req.params;
+    const { nombre, apellido, fecha_nacimiento, gmail, estado } = req.body;
+
+    // Validación de datos
+    if (!nombre || !apellido || !fecha_nacimiento || !gmail || !estado) {
+        return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+    }
+
+    try {
+        const resultado = await db.query('UPDATE usuarios SET nombre = ?, apellido = ?, fecha_nacimiento = ?, gmail = ?, estado = ? WHERE id_usuario = ?', [nombre, apellido, fecha_nacimiento, gmail, estado, id]);
+
+        if (resultado.affectedRows === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        res.json({ message: 'Usuario editado exitosamente' });
+    } catch (error) {
+        console.error('Error al editar el usuario en la API:', error);
+        res.status(500).json({ error: 'Error al editar el usuario' });
+    }
+};
+
+
+
+
+
 
 
 exports.actualizarUsuario = async (req, res) => {
     const { id } = req.params;
     const { nombre, apellido, fecha_nacimiento, gmail, id_clase, contraseña, id_rol, estado } = req.body;
 
-    // Validar que id sea un número positivo
+    // Validar ID
     if (!Number.isInteger(Number(id)) || Number(id) <= 0) {
         return res.status(400).json({ error: 'ID inválido' });
     }
 
-    // Encriptar la contraseña si se proporciona
     let hashedPassword = null;
     if (contraseña) {
         try {
             hashedPassword = await bcrypt.hash(contraseña, 10);
         } catch (err) {
-            console.error('Error al encriptar la contraseña:', err);
-            return res.status(500).json({ error: 'Error interno del servidor al encriptar la contraseña' });
+            console.error('Error al encriptar la contraseña:', err.message);
+            return res.status(500).json({ error: 'Error al encriptar la contraseña' });
         }
     }
 
-    // Consulta SQL para actualizar los campos del usuario
     const query = `
         UPDATE usuarios 
-        SET nombre = ?, apellido = ?, fecha_nacimiento = ?, gmail = ?, id_clase = ?, 
-            ${contraseña ? 'contraseña = ?,' : ''}
-            id_rol = ?, estado = ?
+        SET nombre = ?, apellido = ?, fecha_nacimiento = ?, gmail = ?, id_clase = ?,
+            id_rol = ?, estado = ? ${contraseña ? ', contraseña = ?' : ''}
         WHERE id_usuario = ?
     `;
 
-    // Crear un array con los valores para la consulta SQL
-    const values = [nombre, apellido, fecha_nacimiento, gmail, id_clase];
-    if (hashedPassword) values.push(hashedPassword); // Añadir la contraseña encriptada si está presente
-    values.push(id_rol, estado, id);
+    // Preparar los valores para la consulta
+    const values = [nombre, apellido, fecha_nacimiento, gmail, id_clase, id_rol, estado];
+    if (hashedPassword) {
+        values.push(hashedPassword);
+    }
+    values.push(id); // ID del usuario al final
 
-    // Ejecutar la consulta
     db.query(query, values, (err, results) => {
         if (err) {
-            console.error('Error al ejecutar la consulta:', err); // Agregar un log para depuración
-            return res.status(400).json({ error: 'Error al actualizar estudiante' });
+            console.error('Error al ejecutar la consulta:', err.message);
+            return res.status(500).json({ error: 'Error al actualizar usuario', details: err.message });
         }
         if (results.affectedRows === 0) {
-            return res.status(404).json({ error: 'Estudiante no encontrado' });
+            return res.status(404).json({ error: 'Usuario no encontrado' });
         }
         res.status(200).json({
             id_usuario: id,
@@ -203,6 +189,7 @@ exports.actualizarUsuario = async (req, res) => {
         });
     });
 };
+
 
 
 exports.eliminar = async (req, res) => {
