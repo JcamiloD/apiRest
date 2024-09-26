@@ -102,20 +102,19 @@ exports.actualizarClase = async (req, res) => {
 // Eliminar una clase
 exports.eliminarClase = async (req, res) => {
     const { id } = req.params;
-    console.log(req.params)
     const query = 'DELETE FROM clases WHERE id_clase = ?';
 
     db.query(query, [id], (err, result) => {
         if (err) {
             // Manejo de error de base de datos
-            return res.status(500).json({ error: 'Error al eliminar la clase', details: err.message });
+            return res.status(500).json({ success: false, error: 'Error al eliminar la clase', details: err.message });
         }
         if (result.affectedRows === 0) {
             // Si no se afectaron filas, significa que la clase no fue encontrada
-            return res.status(404).json({ error: 'Clase no encontrada' });
+            return res.status(404).json({ success: false, error: 'Clase no encontrada' });
         }
         // Respuesta exitosa
-        res.status(200).json({ message: 'Clase eliminada exitosamente' });
+        res.status(200).json({ success: true, message: 'Clase eliminada exitosamente' });
     });
 };
 

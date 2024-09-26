@@ -158,7 +158,6 @@ const updateProducto = (req, res) => {
     });
 };
 
-
 const getCatalogo = (req, res) => {
     const token = getTokenFromHeader(req);
 
@@ -170,7 +169,6 @@ const getCatalogo = (req, res) => {
         // Decodifica el token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const { clase } = decoded; // Extrae la clase del token
-
 
         // Consulta para obtener el id_clase basado en el nombre de la clase
         const queryClase = `
@@ -203,9 +201,12 @@ const getCatalogo = (req, res) => {
                     return res.status(500).json({ error: 'Error al obtener el catálogo' });
                 }
 
-
+                // Si no hay productos, devolver un array vacío y un mensaje
                 if (results.length === 0) {
-                    return res.status(404).json({ message: 'No se encontraron productos en el catálogo para esta clase' });
+                    return res.status(200).json({
+                        message: 'No se encontraron productos en el catálogo para esta clase',
+                        productos: []
+                    });
                 }
 
                 // Modifica las rutas de las imágenes para que apunten correctamente
@@ -222,6 +223,7 @@ const getCatalogo = (req, res) => {
         res.status(401).json({ error: 'Token inválido' });
     }
 };
+
 
 
 const getAll = (req, res) => {

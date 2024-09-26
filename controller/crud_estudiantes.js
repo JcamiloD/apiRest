@@ -31,7 +31,6 @@ exports.agregarUsuario = async (req, res) => {
     }
 };
 
-
 exports.traer = async (req, res) => {
     const query = `
         SELECT 
@@ -53,7 +52,7 @@ exports.traer = async (req, res) => {
         LEFT JOIN 
             clases c ON u.id_clase = c.id_clase
         WHERE 
-            u.estado = 'habilitado';
+            u.estado IN ('habilitado', 'espera', 'deshabilitado');
     `;
     
     db.query(query, (err, results) => {
