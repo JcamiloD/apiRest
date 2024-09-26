@@ -8,7 +8,6 @@ const clase = require('./routes/crud_clases.routes');
 const roles = require('./routes/roles.routes');
 const eventos = require('./routes/eventos.routes'); // Asegúrate de que el archivo es correcto
 
-const novedades = require('./routes/novedad.routes');
 
 const asistencias =require('./routes/asistencias.routes')
 
@@ -32,7 +31,7 @@ const cors = require('cors');
 app.use(cors());
 
 
-app.use('/api', auth, perfil, usuario, clase, roles,catalogoRoutes,asistencias, eventos, novedades);
+app.use('/api', auth, perfil, usuario, clase, roles,catalogoRoutes,asistencias, eventos);
 
 
 

@@ -9,6 +9,7 @@ const pool = mysql2.createPool({
   connectionLimit: 10,
   queueLimit: 0
 });
+
 exports.traerEventos = async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -23,6 +24,7 @@ exports.traerEventos = async (req, res) => {
 };
 
 exports.traerEventosPorNombreClase = async (req, res) => {
+  console.log("holaaaaaaaaaaaa")
   const { nombre_clase } = req.params; // Obtener el nombre_clase del parámetro de la ruta
   try {
     const [rows] = await pool.query(`

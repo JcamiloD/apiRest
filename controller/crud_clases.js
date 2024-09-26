@@ -101,6 +101,7 @@ exports.actualizarClase = async (req, res) => {
 // Eliminar una clase
 exports.eliminarClase = async (req, res) => {
     const { id } = req.params;
+    console.log(req.params)
     const query = 'DELETE FROM clases WHERE id_clase = ?';
 
     db.query(query, [id], (err, result) => {

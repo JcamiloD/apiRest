@@ -15,7 +15,6 @@ const upload = require('../config/multerConfig');
     
     router.delete('/delete-producto/:id_catalogo', catalogoController.deleteProducto);
     router.put('/update-producto/:id_catalogo', upload.single('file'), catalogoController.updateProducto);
-
     router.get('/get-catalogo', catalogoController.getCatalogo);
     router.get('/get-all', catalogoController.getAll);
 
