@@ -1,7 +1,7 @@
 const db = require('../database/db');
 const bcrypt = require('bcrypt');
 
-// Traer todas las clases
+
 exports.traer = async (req, res) => {
     const query = `
         SELECT 
@@ -26,6 +26,7 @@ exports.traer = async (req, res) => {
         res.status(200).json(results);
     });
 };
+
 
 
 // Obtener una clase por ID
@@ -117,4 +118,5 @@ exports.eliminarClase = async (req, res) => {
         res.status(200).json({ message: 'Clase eliminada exitosamente' });
     });
 };
+
 
